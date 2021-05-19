@@ -10,7 +10,7 @@ const dynamodb = new aws.DynamoDB.DocumentClient();
 
 router.get('/get-user-by-username/:username', (req, res) => {
   if (!req.params.username) {
-    res.status(400).json({ message: 'Bad request' });
+    res.status(400).json({ error: 'Bad request' });
   } else {
     const params = {
       TableName: USERS_TABLE,
@@ -22,14 +22,14 @@ router.get('/get-user-by-username/:username', (req, res) => {
     dynamodb.get(params, (error, data) => {
       if (error) {
         console.log(error, error.stack);
-        res.status(400).json({ message: 'Unable to fetch user' });
+        res.status(400).json({ error: 'Unable to fetch user' });
       }
 
       if (data.Item) {
         const { username } = data.Item;
         res.status(200).json({ username });
       } else {
-        res.status(404).json({ message: 'User not found' });
+        res.status(404).json({ error: 'User not found' });
       }
     });
   }
@@ -66,7 +66,9 @@ router.post('/create-user', async (req, res) => {
     });
 
   if (userExists) {
-    res.status(400).json({ error: `User ${req.body.username} already exists` });
+    res
+      .status(400)
+      .json({ error: `User '${req.body.username}' already exists` });
   } else {
     dynamodb.put(params, (error) => {
       if (error) {
