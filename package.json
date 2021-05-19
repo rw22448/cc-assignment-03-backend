@@ -17,6 +17,7 @@
   },
   "devDependencies": {
     "dotenv": "^8.2.0",
-    "nodemon": "^2.0.6"
+    "nodemon": "^2.0.6",
+    "serverless-offline": "^7.0.0"
   }
 }
