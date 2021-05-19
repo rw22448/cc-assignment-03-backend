@@ -29,6 +29,8 @@ provider:
             - dynamodb:DeleteItem
           Resource:
             - { 'Fn::GetAtt': ['usersTable', 'Arn'] }
+            - { 'Fn::GetAtt': ['activeUsersTable', 'Arn'] }
+            - { 'Fn::GetAtt': ['eventsTable', 'Arn'] }
   environment:
     USERS_TABLE: ${self:custom.userTableName}
     EVENTS_TABLE: ${self:custom.eventsTableName}
