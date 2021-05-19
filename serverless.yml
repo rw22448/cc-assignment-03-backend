@@ -2,6 +2,11 @@ service: cc-assignment-03-backend
 
 custom:
   tableName: users-${self:provider.stage}
+  serverless-offline:
+    noPrependStageInUrl: true
+
+plugins:
+  - serverless-offline
 
 provider:
   name: aws

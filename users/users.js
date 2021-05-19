@@ -19,12 +19,11 @@ router.get('/get-user-by-username/:username', (req, res) => {
 
     dynamodb.get(params, (error, data) => {
       if (error) {
-        // console.log(error, error.stack);
+        console.log(error, error.stack);
         res.status(400).json({ message: 'Unable to fetch user' });
       }
 
       if (data.Item) {
-        // console.log(data.Item);
         const { username } = data.Item;
         res.status(200).json({ username });
       } else {
@@ -52,7 +51,7 @@ router.post('/create-user', (req, res) => {
 
   dynamodb.put(params, (error) => {
     if (error) {
-      // console.log(error);
+      console.log(error);
       res.status(400).json({ error: 'Unable to create user' });
     } else {
       res.status(200).json({ username });
