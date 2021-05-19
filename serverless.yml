@@ -1,7 +1,9 @@
 service: cc-assignment-03-backend
 
 custom:
-  tableName: users-${self:provider.stage}
+  userTableName: users-${self:provider.stage}
+  eventsTableName: events-${self:provider.stage}
+  activeUsersTableName: active-users-${self:provider.stage}
   serverless-offline:
     noPrependStageInUrl: true
 
@@ -28,7 +30,9 @@ provider:
           Resource:
             - { 'Fn::GetAtt': ['usersTable', 'Arn'] }
   environment:
-    USERS_TABLE: ${self:custom.tableName}
+    USERS_TABLE: ${self:custom.userTableName}
+    EVENTS_TABLE: ${self:custom.eventsTableName}
+    ACTIVE_USERS_TABLE: ${self:custom.activeUsersTableName}
 
 functions:
   app:
@@ -51,4 +55,30 @@ resources:
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
-        TableName: ${self:custom.tableName}
+        TableName: ${self:custom.userTableName}
+    eventsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: N
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:custom.eventsTableName}
+    activeUsersTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: username
+            AttributeType: S
+        KeySchema:
+          - AttributeName: username
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:custom.activeUsersTableName}
