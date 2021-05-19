@@ -1,14 +1,49 @@
 service: cc-assignment-03-backend
 
+custom:
+  tableName: users-${self:provider.stage}
+
 provider:
   name: aws
   runtime: nodejs14.x
   stage: dev
   region: us-east-1
   lambdaHashingVersion: 20201221
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+          Resource:
+            - { 'Fn::GetAtt': ['usersTable', 'Arn'] }
+  environment:
+    USERS_TABLE: ${self:custom.tableName}
 
 functions:
   app:
     handler: index.handler
     events:
       - http: ANY /
+      - http: ANY /{proxy+}
+
+resources:
+  Resources:
+    usersTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: username
+            AttributeType: S
+        KeySchema:
+          - AttributeName: username
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:custom.tableName}
