@@ -53,7 +53,7 @@ router.post('/create-user', async (req, res) => {
 
   let baseUrl = IS_OFFLINE
     ? 'http://' + req.get('host')
-    : 'https://' + req.get('host');
+    : 'https://' + req.get('host') + '/dev';
 
   userExists = await axios
     .get(`${baseUrl}/users/get-user-by-username/${req.body.username}`)
