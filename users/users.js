@@ -59,7 +59,7 @@ router.post('/create-user', async (req, res) => {
       ? 'http://' + req.get('host')
       : 'https://' + req.get('host') + '/dev';
 
-    user = await axios
+    const user = await axios
       .get(`${baseUrl}/users/get-user-by-username/${username}`)
       .then((result) => {
         console.log(result.data);
@@ -108,7 +108,7 @@ router.put('/update-user-password', async (req, res) => {
       ? 'http://' + req.get('host')
       : 'https://' + req.get('host') + '/dev';
 
-    user = await axios
+    const user = await axios
       .get(`${baseUrl}/users/get-user-by-username/${username}`)
       .then((result) => {
         console.log(result.data);
@@ -150,7 +150,7 @@ router.delete('/delete-user-by-username/:username', async (req, res) => {
       ? 'http://' + req.get('host')
       : 'https://' + req.get('host') + '/dev';
 
-    user = await axios
+    const user = await axios
       .get(`${baseUrl}/users/get-user-by-username/${username}`)
       .then((result) => {
         console.log(result.data);
