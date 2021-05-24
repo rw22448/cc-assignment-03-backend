@@ -1,11 +1,11 @@
 const express = require('express');
 const uuid = require('uuid');
 const aws = require('aws-sdk');
-// const axios = require('axios');
+const axios = require('axios');
 
 const router = express.Router({ mergeParams: true });
 
-// const IS_OFFLINE = process.env.IS_OFFLINE;
+const IS_OFFLINE = process.env.IS_OFFLINE;
 const EVENTS_TABLE = process.env.EVENTS_TABLE;
 const dynamodb = new aws.DynamoDB.DocumentClient();
 
@@ -92,21 +92,61 @@ router.get('/get-event-by-id/:id', (req, res) => {
           startTime,
           endTime,
         } = data.Item;
-        res
-          .status(200)
-          .json({
-            id,
-            title,
-            description,
-            creator,
-            attendees,
-            startTime,
-            endTime,
-          });
+        res.status(200).json({
+          id,
+          title,
+          description,
+          creator,
+          attendees,
+          startTime,
+          endTime,
+        });
       } else {
         res.status(404).json({ error: 'Event not found' });
       }
     });
+  }
+});
+
+router.delete('/delete-event-by-id/:id', async (req, res) => {
+  const { id } = req.params;
+
+  if (!id) {
+    res.status(400).json({ error: 'Bad request' });
+  } else {
+    const params = {
+      TableName: EVENTS_TABLE,
+      Key: {
+        id: id,
+      },
+    };
+
+    let baseUrl = IS_OFFLINE
+      ? 'http://' + req.get('host')
+      : 'https://' + req.get('host') + '/dev';
+
+    const event = await axios
+      .get(`${baseUrl}/events/get-event-by-id/${id}`)
+      .then((result) => {
+        console.log(result.data);
+        return result.data;
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+
+    if (event) {
+      dynamodb.delete(params, (error) => {
+        if (error) {
+          console.log(err);
+          res.status(400).json({ error: 'Unable to delete event' });
+        } else {
+          res.status(200).json({ id });
+        }
+      });
+    } else {
+      res.status(404).json({ error: `Event does not exist` });
+    }
   }
 });
 
