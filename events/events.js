@@ -63,4 +63,51 @@ router.post('/create-event', (req, res) => {
   }
 });
 
+router.get('/get-event-by-id/:id', (req, res) => {
+  const { id } = req.params;
+
+  if (!id) {
+    res.status(400).json({ error: 'Bad request' });
+  } else {
+    const params = {
+      TableName: EVENTS_TABLE,
+      Key: {
+        id: id,
+      },
+    };
+
+    dynamodb.get(params, (error, data) => {
+      if (error) {
+        console.log(error);
+        res.status(400).json({ error: 'Unable to fetch event' });
+      }
+
+      if (data.Item) {
+        const {
+          id,
+          title,
+          description,
+          creator,
+          attendees,
+          startTime,
+          endTime,
+        } = data.Item;
+        res
+          .status(200)
+          .json({
+            id,
+            title,
+            description,
+            creator,
+            attendees,
+            startTime,
+            endTime,
+          });
+      } else {
+        res.status(404).json({ error: 'Event not found' });
+      }
+    });
+  }
+});
+
 module.exports = router;
