@@ -150,4 +150,60 @@ router.delete('/delete-event-by-id/:id', async (req, res) => {
   }
 });
 
+router.put('/update-event', async (req, res) => {
+  const { id, title, description, startTime, endTime } = req.body;
+
+  if (!id) {
+    res.status(400).json({ error: 'Bad request' });
+  } else {
+    let baseUrl = IS_OFFLINE
+      ? 'http://' + req.get('host')
+      : 'https://' + req.get('host') + '/dev';
+
+    const event = await axios
+      .get(`${baseUrl}/events/get-event-by-id/${id}`)
+      .then((result) => {
+        console.log(result.data);
+        return result.data;
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+
+    if (event) {
+      const params = {
+        TableName: EVENTS_TABLE,
+        Key: {
+          id: event.id,
+        },
+        UpdateExpression:
+          'set #title = :a, #description = :b, #startTime = :c, #endTime = :d',
+        ExpressionAttributeNames: {
+          '#title': 'title',
+          '#description': 'description',
+          '#startTime': 'startTime',
+          '#endTime': 'endTime',
+        },
+        ExpressionAttributeValues: {
+          ':a': title || event.title,
+          ':b': description || event.description,
+          ':c': startTime || event.startTime,
+          ':d': endTime || event.endTime,
+        },
+      };
+
+      dynamodb.update(params, (error) => {
+        if (error) {
+          console.log(err);
+          res.status(400).json({ error: 'Unable to update event' });
+        } else {
+          res.status(200).json({ id: event.id });
+        }
+      });
+    } else {
+      res.status(404).json({ error: `Event does not exist` });
+    }
+  }
+});
+
 module.exports = router;
