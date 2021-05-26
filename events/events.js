@@ -309,4 +309,65 @@ router.put('/add-attendees', async (req, res) => {
   }
 });
 
+router.put('/remove-attendees', async (req, res) => {
+  const { id, attendees } = req.body;
+
+  if (Array.isArray(attendees) && id) {
+    let baseUrl = IS_OFFLINE
+      ? 'http://' + req.get('host')
+      : 'https://' + req.get('host') + '/dev';
+
+    const headers = {
+      headers: {
+        'cc-authentication-user': req.header('cc-authentication-user'),
+        'cc-authentication-token': req.header('cc-authentication-token'),
+      },
+    };
+
+    const event = await axios
+      .get(`${baseUrl}/events/get-event-by-id/${id}`, headers)
+      .then((result) => {
+        console.log(result.data);
+        return result.data;
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+
+    if (event) {
+      let updatedAttendees = event.attendees;
+      attendees.forEach((attendant) => {
+        const index = updatedAttendees.indexOf(attendant);
+        updatedAttendees.splice(index, 1);
+      });
+
+      const params = {
+        TableName: EVENTS_TABLE,
+        Key: {
+          id: event.id,
+        },
+        UpdateExpression: 'set #attendees = :a',
+        ExpressionAttributeNames: {
+          '#attendees': 'attendees',
+        },
+        ExpressionAttributeValues: {
+          ':a': updatedAttendees,
+        },
+      };
+      dynamodb.update(params, (error) => {
+        if (error) {
+          console.log(err);
+          res.status(400).json({ error: 'Unable to update event' });
+        } else {
+          res.status(200).json({ id: event.id, attendees: updatedAttendees });
+        }
+      });
+    } else {
+      res.status(404).json({ error: `Event does not exist` });
+    }
+  } else {
+    res.status(400).json({ error: 'Bad request' });
+  }
+});
+
 module.exports = router;
