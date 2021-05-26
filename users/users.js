@@ -226,4 +226,28 @@ router.post('/login', async (req, res) => {
   }
 });
 
+router.post('/logout', async (req, res) => {
+  const { username } = req.body;
+
+  if (!username) {
+    res.status(400).json({ error: 'Bad request' });
+  } else {
+    const usersParams = {
+      TableName: ACTIVE_USERS_TABLE,
+      Key: {
+        username: username,
+      },
+    };
+
+    dynamodb.delete(usersParams, (error, data) => {
+      if (error) {
+        console.log(error);
+        res.status(400).json({ error: 'Unable to fetch users' });
+      } else {
+        res.status(200).json({ username });
+      }
+    });
+  }
+});
+
 module.exports = router;
