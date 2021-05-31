@@ -44,12 +44,10 @@ router.get('/get-user-by-username/:username', (req, res) => {
           if (error) {
             res.status(400).json({ error: 'Unable to complete request' });
           } else {
-            res
-              .status(200)
-              .json({
-                username,
-                image: 'data:image/jpeg;base64,' + data.Body.toString('base64'),
-              });
+            res.status(200).json({
+              username,
+              image: 'data:image/jpeg;base64,' + data.Body.toString('base64'),
+            });
           }
         });
       } else {
@@ -125,7 +123,7 @@ router.post('/create-user', async (req, res) => {
       if (QUERY_ERROR) {
         res.status(400).json({ error: 'Unable to complete request' });
       } else {
-        res.status(200).json({ username });
+        res.status(200).json({ username, image });
       }
     }
   }
