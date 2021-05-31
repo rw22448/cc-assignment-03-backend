@@ -4,6 +4,7 @@ custom:
   userTableName: users-${self:provider.stage}
   eventsTableName: events-${self:provider.stage}
   activeUsersTableName: active-users-${self:provider.stage}
+  userImagesBucket: cc-03-user-images-bucket-${self:provider.stage}
   serverless-offline:
     noPrependStageInUrl: true
 
@@ -35,6 +36,7 @@ provider:
     USERS_TABLE: ${self:custom.userTableName}
     EVENTS_TABLE: ${self:custom.eventsTableName}
     ACTIVE_USERS_TABLE: ${self:custom.activeUsersTableName}
+    USER_IMAGES_BUCKET: ${self:custom.activeUsersTableName}
 
 functions:
   app:
@@ -84,3 +86,8 @@ resources:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
         TableName: ${self:custom.activeUsersTableName}
+    userImagesBucket:
+      Type: AWS::S3::Bucket
+      DeletionPolicy: Retain
+      Properties:
+        BucketName: ${self:custom.userImagesBucket}
