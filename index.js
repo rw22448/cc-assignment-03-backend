@@ -6,7 +6,7 @@ const events = require('./events/events.js');
 
 const app = express();
 
-app.use(express.json({ strict: false }));
+app.use(express.json({ strict: false, limit: '2000kb' }));
 
 app.get('/', (req, res) => {
   res.send('Hello World!');

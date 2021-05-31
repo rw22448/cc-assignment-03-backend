@@ -8,7 +8,10 @@ const router = express.Router({ mergeParams: true });
 const USERS_TABLE = process.env.USERS_TABLE;
 const ACTIVE_USERS_TABLE = process.env.ACTIVE_USERS_TABLE;
 const IS_OFFLINE = process.env.IS_OFFLINE;
+const USER_IMAGES_BUCKET = process.env.USER_IMAGES_BUCKET;
+
 const dynamodb = new aws.DynamoDB.DocumentClient();
+const s3 = new aws.S3();
 
 router.get('/get-user-by-username/:username', (req, res) => {
   const { username } = req.params;
@@ -31,7 +34,24 @@ router.get('/get-user-by-username/:username', (req, res) => {
 
       if (data.Item) {
         const { username } = data.Item;
-        res.status(200).json({ username });
+
+        const userImageParams = {
+          Bucket: USER_IMAGES_BUCKET,
+          Key: username,
+        };
+
+        s3.getObject(userImageParams, (error, data) => {
+          if (error) {
+            res.status(400).json({ error: 'Unable to complete request' });
+          } else {
+            res
+              .status(200)
+              .json({
+                username,
+                image: 'data:image/jpeg;base64,' + data.Body.toString('base64'),
+              });
+          }
+        });
       } else {
         res.status(404).json({ error: 'User not found' });
       }
@@ -40,14 +60,18 @@ router.get('/get-user-by-username/:username', (req, res) => {
 });
 
 router.post('/create-user', async (req, res) => {
-  const { username, password } = req.body;
+  const { username, password, image } = req.body;
+
+  let QUERY_ERROR = false;
 
   if (!(typeof username == 'string' && typeof password == 'string')) {
     res
       .status(400)
       .json({ error: 'Username and/or password must be a string' });
+  } else if (!image) {
+    res.status(400).json({ error: 'Image must be provided' });
   } else {
-    const params = {
+    const userTableParams = {
       TableName: USERS_TABLE,
       Item: {
         username: username,
@@ -72,14 +96,37 @@ router.post('/create-user', async (req, res) => {
     if (user) {
       res.status(409).json({ error: `User '${username}' already exists` });
     } else {
-      dynamodb.put(params, (error) => {
+      const userImageParams = {
+        Body: Buffer.from(
+          image.replace(/^data:image\/\w+;base64,/, ''),
+          'base64'
+        ),
+        Bucket: USER_IMAGES_BUCKET,
+        Key: username,
+        ACL: 'public-read',
+        ContentEncoding: 'base64',
+        ContentType: 'image/jpeg',
+      };
+
+      dynamodb.put(userTableParams, (error) => {
         if (error) {
           console.log(error);
-          res.status(400).json({ error: 'Unable to create user' });
-        } else {
-          res.status(200).json({ username });
+          QUERY_ERROR = true;
         }
       });
+
+      s3.upload(userImageParams, (error) => {
+        if (error) {
+          console.log(error);
+          QUERY_ERROR = true;
+        }
+      });
+
+      if (QUERY_ERROR) {
+        res.status(400).json({ error: 'Unable to complete request' });
+      } else {
+        res.status(200).json({ username });
+      }
     }
   }
 });

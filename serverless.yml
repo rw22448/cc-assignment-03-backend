@@ -4,7 +4,7 @@ custom:
   userTableName: users-${self:provider.stage}
   eventsTableName: events-${self:provider.stage}
   activeUsersTableName: active-users-${self:provider.stage}
-  userImagesBucket: cc-03-user-images-bucket-${self:provider.stage}
+  userImagesBucketName: cc-03-user-images-bucket-${self:provider.stage}
   serverless-offline:
     noPrependStageInUrl: true
 
@@ -32,11 +32,17 @@ provider:
             - { 'Fn::GetAtt': ['usersTable', 'Arn'] }
             - { 'Fn::GetAtt': ['activeUsersTable', 'Arn'] }
             - { 'Fn::GetAtt': ['eventsTable', 'Arn'] }
+        - Effect: Allow
+          Action:
+            - s3:GetObject
+            - s3:PutObject
+          Resource:
+            - { 'Fn::GetAtt': ['userImagesBucket', 'Arn'] }
   environment:
     USERS_TABLE: ${self:custom.userTableName}
     EVENTS_TABLE: ${self:custom.eventsTableName}
     ACTIVE_USERS_TABLE: ${self:custom.activeUsersTableName}
-    USER_IMAGES_BUCKET: ${self:custom.activeUsersTableName}
+    USER_IMAGES_BUCKET: ${self:custom.userImagesBucketName}
 
 functions:
   app:
@@ -90,4 +96,4 @@ resources:
       Type: AWS::S3::Bucket
       DeletionPolicy: Retain
       Properties:
-        BucketName: ${self:custom.userImagesBucket}
+        BucketName: ${self:custom.userImagesBucketName}
