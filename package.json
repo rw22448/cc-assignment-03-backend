@@ -1,11 +1,9 @@
 {
-  "name": "rebels-backend",
+  "name": "cc-assignment-03-backend",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "scripts": {
-    "start": "nodemon index"
-  },
+  "scripts": {},
   "keywords": [],
   "author": "",
   "license": "ISC",
