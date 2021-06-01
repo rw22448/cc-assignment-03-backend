@@ -10,7 +10,11 @@ const ACTIVE_USERS_TABLE = process.env.ACTIVE_USERS_TABLE;
 const IS_OFFLINE = process.env.IS_OFFLINE;
 const USER_IMAGES_BUCKET = process.env.USER_IMAGES_BUCKET;
 
-const dynamodb = new aws.DynamoDB.DocumentClient();
+const dynamodbConfig = IS_OFFLINE
+  ? { endpoint: 'http://localhost:8000/', region: 'localhost' }
+  : {};
+
+const dynamodb = new aws.DynamoDB.DocumentClient(dynamodbConfig);
 const s3 = new aws.S3();
 
 router.get('/get-user-by-username/:username', (req, res) => {
@@ -30,9 +34,7 @@ router.get('/get-user-by-username/:username', (req, res) => {
       if (error) {
         console.log(error);
         res.status(400).json({ error: 'Unable to fetch user' });
-      }
-
-      if (data.Item) {
+      } else if (data && data.Item) {
         const { username } = data.Item;
 
         const userImageParams = {

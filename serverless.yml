@@ -7,8 +7,14 @@ custom:
   userImagesBucketName: cc-03-user-images-bucket-${self:provider.stage}
   serverless-offline:
     noPrependStageInUrl: true
+  dynamodb:
+    stages:
+      - dev
+    start:
+      migrate: true
 
 plugins:
+  - serverless-dynamodb-local
   - serverless-offline
 
 provider:

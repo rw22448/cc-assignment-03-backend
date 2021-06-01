@@ -8,7 +8,12 @@ const router = express.Router({ mergeParams: true });
 const IS_OFFLINE = process.env.IS_OFFLINE;
 const EVENTS_TABLE = process.env.EVENTS_TABLE;
 const ACTIVE_USERS_TABLE = process.env.ACTIVE_USERS_TABLE;
-const dynamodb = new aws.DynamoDB.DocumentClient();
+
+const dynamodbConfig = IS_OFFLINE
+  ? { endpoint: 'http://localhost:8000/', region: 'localhost' }
+  : {};
+
+const dynamodb = new aws.DynamoDB.DocumentClient(dynamodbConfig);
 
 const isAuthenticated = (req, res, next) => {
   authUser = req.header('cc-authentication-user');
@@ -28,9 +33,7 @@ const isAuthenticated = (req, res, next) => {
       if (error) {
         console.log(error);
         res.status(400).json({ error: 'Error' });
-      }
-
-      if (data.Item) {
+      } else if (data && data.Item) {
         const { token } = data.Item;
 
         if (token != authToken) {
@@ -109,9 +112,7 @@ router.get('/get-event-by-id/:id', (req, res) => {
       if (error) {
         console.log(error);
         res.status(400).json({ error: 'Unable to fetch event' });
-      }
-
-      if (data.Item) {
+      } else if (data && data.Item) {
         const {
           id,
           title,
