@@ -42,8 +42,9 @@ provider:
           Action:
             - s3:GetObject
             - s3:PutObject
+            - s3:PutObjectAcl
           Resource:
-            - { 'Fn::GetAtt': ['userImagesBucket', 'Arn'] }
+            - arn:aws:s3:::${self:custom.userImagesBucketName}/*
   environment:
     USERS_TABLE: ${self:custom.userTableName}
     EVENTS_TABLE: ${self:custom.eventsTableName}
