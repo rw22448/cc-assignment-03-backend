@@ -269,7 +269,11 @@ router.get('/images/get-image-by-username/:username', async (req, res) => {
           res.status(404).json({ error: 'User image does not exist' });
         } else {
           console.log(error);
-          res.status(400).json({ error: 'Unable to complete request' });
+          res
+            .status(400)
+            .json({
+              error: 'Unable to complete request, user image may not exist',
+            });
         }
       } else {
         res.status(200).json({
