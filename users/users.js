@@ -75,7 +75,8 @@ router.post('/create-user', async (req, res) => {
       .get(`${baseUrl}/users/get-user-by-username/${username}`)
       .then((result) => {
         return result.data;
-      });
+      })
+      .catch((error) => {});
 
     if (user) {
       res.status(409).json({ error: `User '${username}' already exists` });
@@ -119,7 +120,8 @@ router.put('/update-user-password', async (req, res) => {
       .get(`${baseUrl}/users/get-user-by-username/${username}`)
       .then((result) => {
         return result.data;
-      });
+      })
+      .catch((error) => {});
 
     if (user) {
       dynamodb.update(params, (error) => {
@@ -157,7 +159,8 @@ router.delete('/delete-user-by-username/:username', async (req, res) => {
       .get(`${baseUrl}/users/get-user-by-username/${username}`)
       .then((result) => {
         return result.data;
-      });
+      })
+      .catch((error) => {});
 
     if (user) {
       dynamodb.delete(params, (error) => {
