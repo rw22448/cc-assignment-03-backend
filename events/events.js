@@ -15,7 +15,7 @@ const dynamodbConfig = IS_OFFLINE
 
 const dynamodb = new aws.DynamoDB.DocumentClient(dynamodbConfig);
 
-const isAuthenticated = (req, res, next) => {
+const isAuthenticated = async (req, res, next) => {
   authUser = req.header('cc-authentication-user');
   authToken = req.header('cc-authentication-token');
 
@@ -50,7 +50,7 @@ const isAuthenticated = (req, res, next) => {
 
 router.use(isAuthenticated);
 
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   res.status(200).json({ message: 'Success' });
 });
 
@@ -95,7 +95,7 @@ router.post('/create-event', (req, res) => {
   }
 });
 
-router.get('/get-event-by-id/:id', (req, res) => {
+router.get('/get-event-by-id/:id', async (req, res) => {
   const { id } = req.params;
 
   if (!id) {

@@ -14,8 +14,10 @@ const dynamodbConfig = IS_OFFLINE
   ? { endpoint: 'http://localhost:8000/', region: 'localhost' }
   : {};
 
+const s3Config = {};
+
 const dynamodb = new aws.DynamoDB.DocumentClient(dynamodbConfig);
-const s3 = new aws.S3();
+const s3 = new aws.S3(s3Config);
 
 router.get('/get-user-by-username/:username', (req, res) => {
   const { username } = req.params;
@@ -35,22 +37,8 @@ router.get('/get-user-by-username/:username', (req, res) => {
         console.log(error);
         res.status(400).json({ error: 'Unable to fetch user' });
       } else if (data && data.Item) {
-        const { username } = data.Item;
-
-        const userImageParams = {
-          Bucket: USER_IMAGES_BUCKET,
-          Key: username,
-        };
-
-        s3.getObject(userImageParams, (error, data) => {
-          if (error) {
-            res.status(400).json({ error: 'Unable to complete request' });
-          } else {
-            res.status(200).json({
-              username,
-              image: 'data:image/jpeg;base64,' + data.Body.toString('base64'),
-            });
-          }
+        res.status(200).json({
+          username,
         });
       } else {
         res.status(404).json({ error: 'User not found' });
@@ -60,16 +48,16 @@ router.get('/get-user-by-username/:username', (req, res) => {
 });
 
 router.post('/create-user', async (req, res) => {
-  const { username, password, image } = req.body;
+  const { username, password } = req.body;
 
-  let QUERY_ERROR = false;
-
-  if (!(typeof username == 'string' && typeof password == 'string')) {
+  if (!(username && password)) {
+    res
+      .status(400)
+      .json({ error: 'Username and/or password must be provided' });
+  } else if (!(typeof username == 'string' && typeof password == 'string')) {
     res
       .status(400)
       .json({ error: 'Username and/or password must be a string' });
-  } else if (!image) {
-    res.status(400).json({ error: 'Image must be provided' });
   } else {
     const userTableParams = {
       TableName: USERS_TABLE,
@@ -86,47 +74,19 @@ router.post('/create-user', async (req, res) => {
     const user = await axios
       .get(`${baseUrl}/users/get-user-by-username/${username}`)
       .then((result) => {
-        console.log(result.data);
         return result.data;
-      })
-      .catch((error) => {
-        console.log(error);
       });
 
     if (user) {
       res.status(409).json({ error: `User '${username}' already exists` });
     } else {
-      const userImageParams = {
-        Body: Buffer.from(
-          image.replace(/^data:image\/\w+;base64,/, ''),
-          'base64'
-        ),
-        Bucket: USER_IMAGES_BUCKET,
-        Key: username,
-        ACL: 'public-read',
-        ContentEncoding: 'base64',
-        ContentType: 'image/jpeg',
-      };
-
       dynamodb.put(userTableParams, (error) => {
         if (error) {
-          console.log(error);
-          QUERY_ERROR = true;
+          res.status(400).json({ error: 'Unable to complete request' });
+        } else {
+          res.status(200).json({ username });
         }
       });
-
-      s3.upload(userImageParams, (error) => {
-        if (error) {
-          console.log(error);
-          QUERY_ERROR = true;
-        }
-      });
-
-      if (QUERY_ERROR) {
-        res.status(400).json({ error: 'Unable to complete request' });
-      } else {
-        res.status(200).json({ username, image });
-      }
     }
   }
 });
@@ -158,17 +118,13 @@ router.put('/update-user-password', async (req, res) => {
     const user = await axios
       .get(`${baseUrl}/users/get-user-by-username/${username}`)
       .then((result) => {
-        console.log(result.data);
         return result.data;
-      })
-      .catch((error) => {
-        console.log(error);
       });
 
     if (user) {
       dynamodb.update(params, (error) => {
         if (error) {
-          console.log(err);
+          console.log(error);
           res.status(400).json({ error: 'Unable to update user' });
         } else {
           res.status(200).json({ username });
@@ -200,17 +156,13 @@ router.delete('/delete-user-by-username/:username', async (req, res) => {
     const user = await axios
       .get(`${baseUrl}/users/get-user-by-username/${username}`)
       .then((result) => {
-        console.log(result.data);
         return result.data;
-      })
-      .catch((error) => {
-        console.log(error);
       });
 
     if (user) {
       dynamodb.delete(params, (error) => {
         if (error) {
-          console.log(err);
+          console.log(error);
           res.status(400).json({ error: 'Unable to delete user' });
         } else {
           res.status(200).json({ username });
@@ -292,6 +244,67 @@ router.post('/logout', async (req, res) => {
         res.status(400).json({ error: 'Unable to fetch users' });
       } else {
         res.status(200).json({ username });
+      }
+    });
+  }
+});
+
+router.get('/images/get-image-by-username/:username', async (req, res) => {
+  const { username } = req.params;
+
+  if (!username) {
+    res.status(400).json({ error: 'Bad request' });
+  } else {
+    const userImageParams = {
+      Bucket: USER_IMAGES_BUCKET,
+      Key: username,
+    };
+
+    s3.getObject(userImageParams, (error, data) => {
+      if (error) {
+        if (error.statusCode == 404) {
+          res.status(404).json({ error: 'User image does not exist' });
+        } else {
+          console.log(error);
+          res.status(400).json({ error: 'Unable to complete request' });
+        }
+      } else {
+        res.status(200).json({
+          username,
+          image: 'data:image/jpeg;base64,' + data.Body.toString('base64'),
+        });
+      }
+    });
+  }
+});
+
+router.post('/images/create-image', async (req, res) => {
+  const { username, image } = req.body;
+
+  if (!(username && image)) {
+    res.status(400).json({ error: 'Bad request' });
+  } else {
+    const userImageParams = {
+      Body: Buffer.from(
+        image.replace(/^data:image\/\w+;base64,/, ''),
+        'base64'
+      ),
+      Bucket: USER_IMAGES_BUCKET,
+      Key: username,
+      ACL: 'public-read',
+      ContentEncoding: 'base64',
+      ContentType: 'image/jpeg',
+    };
+
+    s3.upload(userImageParams, (error) => {
+      if (error) {
+        console.log(error);
+        res.status(400).json({ error: 'Unable to complete request' });
+      } else {
+        res.status(200).json({
+          username,
+          image,
+        });
       }
     });
   }
