@@ -32,7 +32,7 @@ const isAuthenticated = async (req, res, next) => {
     dynamodb.get(params, (error, data) => {
       if (error) {
         console.log(error);
-        res.status(400).json({ error: 'Error' });
+        res.status(500).json({ error: 'Error' });
       } else if (data && data.Item) {
         const { token } = data.Item;
 
@@ -82,7 +82,7 @@ router.post('/create-event', (req, res) => {
     dynamodb.put(params, (error) => {
       if (error) {
         console.log(error);
-        res.status(400).json({ error: 'Unable to create event' });
+        res.status(500).json({ error: 'Unable to create event' });
       } else {
         res.status(200).json({
           id,
@@ -117,7 +117,7 @@ router.get('/get-event-by-id/:id', async (req, res) => {
     dynamodb.get(params, (error, data) => {
       if (error) {
         console.log(error);
-        res.status(400).json({ error: 'Unable to fetch event' });
+        res.status(500).json({ error: 'Unable to fetch event' });
       } else if (data && data.Item) {
         const {
           id,
@@ -187,7 +187,7 @@ router.delete('/delete-event-by-id/:id', async (req, res) => {
       dynamodb.delete(params, (error) => {
         if (error) {
           console.log(err);
-          res.status(400).json({ error: 'Unable to delete event' });
+          res.status(500).json({ error: 'Unable to delete event' });
         } else {
           res.status(200).json({ id });
         }
@@ -252,7 +252,7 @@ router.put('/update-event', async (req, res) => {
       dynamodb.update(params, (error) => {
         if (error) {
           console.log(err);
-          res.status(400).json({ error: 'Unable to update event' });
+          res.status(500).json({ error: 'Unable to update event' });
         } else {
           res.status(200).json({ id: event.id });
         }
@@ -311,7 +311,7 @@ router.put('/add-attendees', async (req, res) => {
       dynamodb.update(params, (error) => {
         if (error) {
           console.log(err);
-          res.status(400).json({ error: 'Unable to update event' });
+          res.status(500).json({ error: 'Unable to update event' });
         } else {
           res.status(200).json({
             id: event.id,
@@ -376,7 +376,7 @@ router.put('/remove-attendees', async (req, res) => {
       dynamodb.update(params, (error) => {
         if (error) {
           console.log(err);
-          res.status(400).json({ error: 'Unable to update event' });
+          res.status(500).json({ error: 'Unable to update event' });
         } else {
           res.status(200).json({
             id: event.id,
@@ -439,7 +439,7 @@ router.put('/toggle-past-event', async (req, res) => {
       dynamodb.update(params, (error) => {
         if (error) {
           console.log(err);
-          res.status(400).json({ error: 'Unable to update event' });
+          res.status(500).json({ error: 'Unable to update event' });
         } else {
           res.status(200).json({ id: event.id, pastEvent: updatedPastEvent });
         }

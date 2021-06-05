@@ -35,7 +35,7 @@ router.get('/get-user-by-username/:username', (req, res) => {
     dynamodb.get(params, (error, data) => {
       if (error) {
         console.log(error);
-        res.status(400).json({ error: 'Unable to fetch user' });
+        res.status(500).json({ error: 'Unable to fetch user' });
       } else if (data && data.Item) {
         res.status(200).json({
           username: username,
@@ -87,7 +87,7 @@ router.post('/create-user', async (req, res) => {
     } else {
       dynamodb.put(userTableParams, (error) => {
         if (error) {
-          res.status(400).json({ error: 'Unable to complete request' });
+          res.status(500).json({ error: 'Unable to complete request' });
         } else {
           res
             .status(200)
@@ -133,7 +133,7 @@ router.put('/update-user-password', async (req, res) => {
       dynamodb.update(params, (error) => {
         if (error) {
           console.log(error);
-          res.status(400).json({ error: 'Unable to update user' });
+          res.status(500).json({ error: 'Unable to update user' });
         } else {
           res.status(200).json({ username });
         }
@@ -172,7 +172,7 @@ router.delete('/delete-user-by-username/:username', async (req, res) => {
       dynamodb.delete(params, (error) => {
         if (error) {
           console.log(error);
-          res.status(400).json({ error: 'Unable to delete user' });
+          res.status(500).json({ error: 'Unable to delete user' });
         } else {
           res.status(200).json({ username });
         }
@@ -201,7 +201,7 @@ router.post('/login', async (req, res) => {
     dynamodb.get(usersParams, (error, data) => {
       if (error) {
         console.log(error);
-        res.status(400).json({ error: 'Unable to fetch users' });
+        res.status(500).json({ error: 'Unable to fetch users' });
       }
 
       if (data.Item) {
@@ -219,7 +219,7 @@ router.post('/login', async (req, res) => {
           dynamodb.put(activeUsersParams, (error) => {
             if (error) {
               console.log(error);
-              res.status(400).json({ error: 'Unable to complete request' });
+              res.status(500).json({ error: 'Unable to complete request' });
             } else {
               res.status(200).json({ username, token });
             }
@@ -250,7 +250,7 @@ router.post('/logout', async (req, res) => {
     dynamodb.delete(usersParams, (error, data) => {
       if (error) {
         console.log(error);
-        res.status(400).json({ error: 'Unable to fetch users' });
+        res.status(500).json({ error: 'Unable to fetch users' });
       } else {
         res.status(200).json({ username });
       }
@@ -275,7 +275,7 @@ router.get('/images/get-image-by-username/:username', async (req, res) => {
           res.status(404).json({ error: 'User image does not exist' });
         } else {
           console.log(error);
-          res.status(400).json({
+          res.status(500).json({
             error: 'Unable to complete request, user image may not exist',
           });
         }
@@ -310,7 +310,7 @@ router.put('/images/create-image', async (req, res) => {
     s3.upload(userImageParams, (error) => {
       if (error) {
         console.log(error);
-        res.status(400).json({ error: 'Unable to complete request' });
+        res.status(500).json({ error: 'Unable to complete request' });
       } else {
         res.status(200).json({
           username,
@@ -359,7 +359,7 @@ router.put('/add-to-created-events', async (req, res) => {
       dynamodb.update(params, (error) => {
         if (error) {
           console.log(err);
-          res.status(400).json({ error: 'Unable to update user' });
+          res.status(500).json({ error: 'Unable to update user' });
         } else {
           res.status(200).json({
             username: user.username,
@@ -412,7 +412,7 @@ router.post('/add-to-attending-events', async () => {
       dynamodb.update(params, (error) => {
         if (error) {
           console.log(err);
-          res.status(400).json({ error: 'Unable to update user' });
+          res.status(500).json({ error: 'Unable to update user' });
         } else {
           res.status(200).json({
             username: user.username,
