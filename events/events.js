@@ -55,9 +55,10 @@ router.get('/', async (req, res) => {
 });
 
 router.post('/create-event', (req, res) => {
-  const { title, description, creator, startTime, endTime } = req.body;
+  const { title, description, creator, startTime, endTime, location } =
+    req.body;
 
-  if (!(title && description && creator && startTime && endTime)) {
+  if (!(title && description && creator && startTime && endTime && location)) {
     res.status(400).json({ error: 'Bad request' });
   } else {
     const id = uuid.v4();
@@ -73,6 +74,7 @@ router.post('/create-event', (req, res) => {
         attendees: attendees,
         startTime: startTime,
         endTime: endTime,
+        location: location,
       },
     };
 
@@ -89,6 +91,7 @@ router.post('/create-event', (req, res) => {
           attendees,
           startTime,
           endTime,
+          location,
         });
       }
     });
@@ -121,6 +124,7 @@ router.get('/get-event-by-id/:id', async (req, res) => {
           attendees,
           startTime,
           endTime,
+          location,
         } = data.Item;
         res.status(200).json({
           id,
@@ -130,6 +134,7 @@ router.get('/get-event-by-id/:id', async (req, res) => {
           attendees,
           startTime,
           endTime,
+          location,
         });
       } else {
         res.status(404).json({ error: 'Event not found' });
@@ -188,7 +193,7 @@ router.delete('/delete-event-by-id/:id', async (req, res) => {
 });
 
 router.put('/update-event', async (req, res) => {
-  const { id, title, description, startTime, endTime } = req.body;
+  const { id, title, description, startTime, endTime, location } = req.body;
 
   if (!id) {
     res.status(400).json({ error: 'Bad request' });
@@ -221,18 +226,20 @@ router.put('/update-event', async (req, res) => {
           id: event.id,
         },
         UpdateExpression:
-          'set #title = :a, #description = :b, #startTime = :c, #endTime = :d',
+          'set #title = :a, #description = :b, #startTime = :c, #endTime = :d, #location = :e',
         ExpressionAttributeNames: {
           '#title': 'title',
           '#description': 'description',
           '#startTime': 'startTime',
           '#endTime': 'endTime',
+          '#location': 'location',
         },
         ExpressionAttributeValues: {
           ':a': title || event.title,
           ':b': description || event.description,
           ':c': startTime || event.startTime,
           ':d': endTime || event.endTime,
+          ':e': location || event.location,
         },
       };
 
