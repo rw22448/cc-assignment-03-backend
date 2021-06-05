@@ -89,6 +89,7 @@ router.post('/create-event', (req, res) => {
           description,
           creator,
           attendees,
+          numberOfAttendees: attendees.length,
           startTime,
           endTime,
           location,
@@ -132,6 +133,7 @@ router.get('/get-event-by-id/:id', async (req, res) => {
           description,
           creator,
           attendees,
+          numberOfAttendees: attendees.length,
           startTime,
           endTime,
           location,
@@ -307,7 +309,11 @@ router.put('/add-attendees', async (req, res) => {
           console.log(err);
           res.status(400).json({ error: 'Unable to update event' });
         } else {
-          res.status(200).json({ id: event.id, attendees: updatedAttendees });
+          res.status(200).json({
+            id: event.id,
+            attendees: updatedAttendees,
+            numberOfAttendees: attendees.length,
+          });
         }
       });
     } else {
@@ -368,7 +374,13 @@ router.put('/remove-attendees', async (req, res) => {
           console.log(err);
           res.status(400).json({ error: 'Unable to update event' });
         } else {
-          res.status(200).json({ id: event.id, attendees: updatedAttendees });
+          res
+            .status(200)
+            .json({
+              id: event.id,
+              attendees: updatedAttendees,
+              numberOfAttendees: attendees.length,
+            });
         }
       });
     } else {
