@@ -312,7 +312,7 @@ router.put('/add-attendees', async (req, res) => {
           res.status(200).json({
             id: event.id,
             attendees: updatedAttendees,
-            numberOfAttendees: attendees.length,
+            numberOfAttendees: updatedAttendees.length,
           });
         }
       });
@@ -374,13 +374,11 @@ router.put('/remove-attendees', async (req, res) => {
           console.log(err);
           res.status(400).json({ error: 'Unable to update event' });
         } else {
-          res
-            .status(200)
-            .json({
-              id: event.id,
-              attendees: updatedAttendees,
-              numberOfAttendees: attendees.length,
-            });
+          res.status(200).json({
+            id: event.id,
+            attendees: updatedAttendees,
+            numberOfAttendees: updatedAttendees.length,
+          });
         }
       });
     } else {
