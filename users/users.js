@@ -289,7 +289,7 @@ router.get('/images/get-image-by-username/:username', async (req, res) => {
   }
 });
 
-router.post('/images/create-image', async (req, res) => {
+router.put('/images/create-image', async (req, res) => {
   const { username, image } = req.body;
 
   if (!(username && image)) {
@@ -321,7 +321,7 @@ router.post('/images/create-image', async (req, res) => {
   }
 });
 
-router.post('/add-to-created-events', async (req, res) => {
+router.put('/add-to-created-events', async (req, res) => {
   const { username, id } = req.body;
 
   if (!(username && typeof id == 'string')) {
