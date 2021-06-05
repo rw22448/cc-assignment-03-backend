@@ -38,7 +38,9 @@ router.get('/get-user-by-username/:username', (req, res) => {
         res.status(400).json({ error: 'Unable to fetch user' });
       } else if (data && data.Item) {
         res.status(200).json({
-          username,
+          username: username,
+          created_events: data.Item.created_events,
+          attending_events: data.Item.attending_events,
         });
       } else {
         res.status(404).json({ error: 'User not found' });
@@ -64,6 +66,8 @@ router.post('/create-user', async (req, res) => {
       Item: {
         username: username,
         password: password,
+        created_events: [],
+        attending_events: [],
       },
     };
 
@@ -85,7 +89,9 @@ router.post('/create-user', async (req, res) => {
         if (error) {
           res.status(400).json({ error: 'Unable to complete request' });
         } else {
-          res.status(200).json({ username });
+          res
+            .status(200)
+            .json({ username, created_events: [], attending_events: [] });
         }
       });
     }
@@ -269,11 +275,9 @@ router.get('/images/get-image-by-username/:username', async (req, res) => {
           res.status(404).json({ error: 'User image does not exist' });
         } else {
           console.log(error);
-          res
-            .status(400)
-            .json({
-              error: 'Unable to complete request, user image may not exist',
-            });
+          res.status(400).json({
+            error: 'Unable to complete request, user image may not exist',
+          });
         }
       } else {
         res.status(200).json({
@@ -314,6 +318,112 @@ router.post('/images/create-image', async (req, res) => {
         });
       }
     });
+  }
+});
+
+router.post('/add-to-created-events', async (req, res) => {
+  const { username, id } = req.body;
+
+  if (!(username && typeof id == 'string')) {
+    res.status(400).json({ error: 'Bad request' });
+  } else {
+    let baseUrl = IS_OFFLINE
+      ? 'http://' + req.get('host')
+      : 'https://' + req.get('host') + '/dev';
+
+    const user = await axios
+      .get(`${baseUrl}/users/get-user-by-username/${username}`)
+      .then((result) => {
+        return result.data;
+      })
+      .catch((error) => {});
+
+    if (user) {
+      let updatedEventsArray = user.created_events;
+      updatedEventsArray.push(id);
+
+      const params = {
+        TableName: USERS_TABLE,
+        Key: {
+          username: username,
+        },
+        UpdateExpression: 'set #created_events = :a',
+        ExpressionAttributeNames: {
+          '#created_events': 'created_events',
+        },
+        ExpressionAttributeValues: {
+          ':a': updatedEventsArray,
+        },
+      };
+
+      dynamodb.update(params, (error) => {
+        if (error) {
+          console.log(err);
+          res.status(400).json({ error: 'Unable to update user' });
+        } else {
+          res.status(200).json({
+            username: user.username,
+            created_events: user.created_events,
+            attending_events: user.attending_events,
+          });
+        }
+      });
+    } else {
+      res.status(404).json({ error: `User does not exist` });
+    }
+  }
+});
+
+router.post('/add-to-attending-events', async () => {
+  const { username, id } = req.body;
+
+  if (!(username && typeof id == 'string')) {
+    res.status(400).json({ error: 'Bad request' });
+  } else {
+    let baseUrl = IS_OFFLINE
+      ? 'http://' + req.get('host')
+      : 'https://' + req.get('host') + '/dev';
+
+    const user = await axios
+      .get(`${baseUrl}/users/get-user-by-username/${username}`)
+      .then((result) => {
+        return result.data;
+      })
+      .catch((error) => {});
+
+    if (user) {
+      let updatedEventsArray = user.attending_events;
+      updatedEventsArray.push(id);
+
+      const params = {
+        TableName: USERS_TABLE,
+        Key: {
+          username: username,
+        },
+        UpdateExpression: 'set #attending_events = :a',
+        ExpressionAttributeNames: {
+          '#attending_events': 'attending_events',
+        },
+        ExpressionAttributeValues: {
+          ':a': updatedEventsArray,
+        },
+      };
+
+      dynamodb.update(params, (error) => {
+        if (error) {
+          console.log(err);
+          res.status(400).json({ error: 'Unable to update user' });
+        } else {
+          res.status(200).json({
+            username: user.username,
+            created_events: user.created_events,
+            attending_events: user.attending_events,
+          });
+        }
+      });
+    } else {
+      res.status(404).json({ error: `User does not exist` });
+    }
   }
 });
 

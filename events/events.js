@@ -301,6 +301,7 @@ router.put('/add-attendees', async (req, res) => {
           ':a': updatedAttendees,
         },
       };
+
       dynamodb.update(params, (error) => {
         if (error) {
           console.log(err);
