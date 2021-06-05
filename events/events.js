@@ -393,4 +393,61 @@ router.put('/remove-attendees', async (req, res) => {
   }
 });
 
+router.put('/toggle-past-event', async (req, res) => {
+  const { id } = req.body;
+
+  if (!id) {
+    res.status(400).json({ error: 'Bad request' });
+  } else {
+    let baseUrl = IS_OFFLINE
+      ? 'http://' + req.get('host')
+      : 'https://' + req.get('host') + '/dev';
+
+    const headers = {
+      headers: {
+        'cc-authentication-user': req.header('cc-authentication-user'),
+        'cc-authentication-token': req.header('cc-authentication-token'),
+      },
+    };
+
+    const event = await axios
+      .get(`${baseUrl}/events/get-event-by-id/${id}`, headers)
+      .then((result) => {
+        console.log(result.data);
+        return result.data;
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+
+    if (event) {
+      const updatedPastEvent = !event.pastEvent;
+      const params = {
+        TableName: EVENTS_TABLE,
+        Key: {
+          id: event.id,
+        },
+        UpdateExpression: 'set #pastEvent = :a',
+        ExpressionAttributeNames: {
+          '#pastEvent': 'pastEvent',
+        },
+        ExpressionAttributeValues: {
+          ':a': updatedPastEvent,
+        },
+      };
+
+      dynamodb.update(params, (error) => {
+        if (error) {
+          console.log(err);
+          res.status(400).json({ error: 'Unable to update event' });
+        } else {
+          res.status(200).json({ id: event.id, pastEvent: updatedPastEvent });
+        }
+      });
+    } else {
+      res.status(404).json({ error: `Event does not exist` });
+    }
+  }
+});
+
 module.exports = router;
