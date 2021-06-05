@@ -104,3 +104,7 @@ resources:
       DeletionPolicy: Retain
       Properties:
         BucketName: ${self:custom.userImagesBucketName}
+
+package:
+  patterns:
+    - '!.dynamodb'
