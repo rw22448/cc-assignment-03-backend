@@ -75,6 +75,7 @@ router.post('/create-event', (req, res) => {
         startTime: startTime,
         endTime: endTime,
         location: location,
+        pastEvent: false,
       },
     };
 
@@ -93,6 +94,7 @@ router.post('/create-event', (req, res) => {
           startTime,
           endTime,
           location,
+          pastEvent: false,
         });
       }
     });
@@ -126,6 +128,7 @@ router.get('/get-event-by-id/:id', async (req, res) => {
           startTime,
           endTime,
           location,
+          pastEvent,
         } = data.Item;
         res.status(200).json({
           id,
@@ -137,6 +140,7 @@ router.get('/get-event-by-id/:id', async (req, res) => {
           startTime,
           endTime,
           location,
+          pastEvent,
         });
       } else {
         res.status(404).json({ error: 'Event not found' });
