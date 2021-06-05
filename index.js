@@ -4,6 +4,7 @@ const cors = require('cors');
 
 const users = require('./users/users.js');
 const events = require('./events/events.js');
+const publicEvents = require('./events/public-events.js');
 
 const app = express();
 
@@ -17,5 +18,6 @@ app.get('/', (req, res) => {
 
 app.use('/users', users);
 app.use('/events', events);
+app.use('/public-events', publicEvents);
 
 module.exports.handler = serverless(app);

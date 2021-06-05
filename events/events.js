@@ -450,18 +450,4 @@ router.put('/toggle-past-event', async (req, res) => {
   }
 });
 
-router.get('/get-all-events', async (req, res) => {
-  const params = {
-    TableName: EVENTS_TABLE,
-  };
-
-  dynamodb.scan(params, (error, data) => {
-    if (error) {
-      res.status(500).json({ error: 'Scan could not be completed' });
-    } else {
-      res.status(200).json({ events: data.Items });
-    }
-  });
-});
-
 module.exports = router;
