@@ -9,7 +9,6 @@ const USERS_TABLE = process.env.USERS_TABLE;
 const ACTIVE_USERS_TABLE = process.env.ACTIVE_USERS_TABLE;
 const IS_OFFLINE = process.env.IS_OFFLINE;
 const USER_IMAGES_BUCKET = process.env.USER_IMAGES_BUCKET;
-const JOIN_EVENTS_TABLE = process.env.JOIN_EVENTS_TABLE;
 
 const dynamodbConfig = IS_OFFLINE
   ? { endpoint: 'http://localhost:8000/', region: 'localhost' }
@@ -68,14 +67,6 @@ router.post('/create-user', async (req, res) => {
       },
     };
 
-    const joinEventsTableParams = {
-      TableName: JOIN_EVENTS_TABLE,
-      Item: {
-        username: username,
-        attending_events: [],
-      },
-    };
-
     let baseUrl = IS_OFFLINE
       ? 'http://' + req.get('host')
       : 'https://' + req.get('host') + '/dev';
@@ -94,13 +85,7 @@ router.post('/create-user', async (req, res) => {
         if (error) {
           res.status(500).json({ error: 'Unable to complete request' });
         } else {
-          dynamodb.put(joinEventsTableParams, (error) => {
-            if (error) {
-              res.status(500).json({ error: 'Unable to complete request' });
-            } else {
-              res.status(200).json({ username });
-            }
-          });
+          res.status(200).json({ username });
         }
       });
     }
@@ -166,13 +151,6 @@ router.delete('/delete-user-by-username/:username', async (req, res) => {
       },
     };
 
-    const joinEventsTableParams = {
-      TableName: JOIN_EVENTS_TABLE,
-      Key: {
-        username: username,
-      },
-    };
-
     let baseUrl = IS_OFFLINE
       ? 'http://' + req.get('host')
       : 'https://' + req.get('host') + '/dev';
@@ -190,14 +168,7 @@ router.delete('/delete-user-by-username/:username', async (req, res) => {
           console.log(error);
           res.status(500).json({ error: 'Unable to delete user' });
         } else {
-          dynamodb.delete(joinEventsTableParams, (error) => {
-            if (error) {
-              console.log(error);
-              res.status(500).json({ error: 'Unable to complete request' });
-            } else {
-              res.status(200).json({ username });
-            }
-          });
+          res.status(200).json({ username });
         }
       });
     } else {

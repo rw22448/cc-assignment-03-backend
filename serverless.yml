@@ -108,9 +108,13 @@ resources:
         AttributeDefinitions:
           - AttributeName: username
             AttributeType: S
+          - AttributeName: eventId
+            AttributeType: S
         KeySchema:
           - AttributeName: username
             KeyType: HASH
+          - AttributeName: eventId
+            KeyType: SORT
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1

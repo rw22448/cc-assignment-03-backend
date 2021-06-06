@@ -356,7 +356,9 @@ router.put('/add-attendees', async (req, res) => {
               headers
             )
             .then((result) => {
-              updatedAttendees.push(attendant);
+              if (!updatedAttendees.includes(attendant)) {
+                updatedAttendees.push(attendant);
+              }
 
               return attendant;
             })
@@ -553,24 +555,30 @@ router.get('/get-events-by-username/:username', async (req, res) => {
   } else {
     const params = {
       TableName: JOIN_EVENTS_TABLE,
-      Key: {
-        username: username,
+      KeyConditionExpression: '#username = :username',
+      ExpressionAttributeNames: {
+        '#username': 'username',
+      },
+      ExpressionAttributeValues: {
+        ':username': username,
       },
     };
 
-    dynamodb.get(params, (error, data) => {
+    dynamodb.query(params, (error, data) => {
       if (error) {
         console.log(error);
         res.status(500).json({ error: 'Unable to fetch user' });
-      } else if (data && data.Item) {
-        res.status(200).json({
-          username: data.Item.username,
-          attending_events: data.Item.attending_events,
-        });
       } else {
-        res.status(404).json({
-          error: 'User not found, user may not currently be attending events',
-        });
+        console.log(data);
+        if (data && data.Items) {
+          res.status(200).json({
+            data: data.Items,
+          });
+        } else {
+          res.status(404).json({
+            error: 'User not found, user may not currently be attending events',
+          });
+        }
       }
     });
   }
@@ -594,45 +602,45 @@ router.post('/add-event-to-user', async (req, res) => {
     };
 
     const user = await axios
-      .get(`${baseUrl}/events/get-events-by-username/${username}`, headers)
+      .get(`${baseUrl}/users/get-user-by-username/${username}`)
       .then((result) => {
         return result.data;
       })
       .catch((error) => {});
 
     if (user) {
-      let updatedEventsArray = user.attending_events;
+      const event = await axios
+        .get(`${baseUrl}/events/get-event-by-id/${id}`, headers)
+        .then((result) => {
+          console.log(result.data);
+          return result.data;
+        })
+        .catch((error) => {
+          console.log(error);
+        });
 
-      if (updatedEventsArray.includes(id)) {
-        res.status(400).json({ error: 'Cannot add event twice' });
-      } else {
-        updatedEventsArray.push(id);
-
-        const params = {
+      if (event) {
+        const joinEventsTableParams = {
           TableName: JOIN_EVENTS_TABLE,
-          Key: {
+          Item: {
             username: username,
-          },
-          UpdateExpression: 'set #attending_events = :a',
-          ExpressionAttributeNames: {
-            '#attending_events': 'attending_events',
-          },
-          ExpressionAttributeValues: {
-            ':a': updatedEventsArray,
+            eventId: id,
           },
         };
 
-        dynamodb.update(params, (error) => {
+        dynamodb.put(joinEventsTableParams, (error) => {
           if (error) {
             console.log(err);
             res.status(500).json({ error: 'Unable to update user' });
           } else {
             res.status(200).json({
-              username: user.username,
-              attending_events: user.attending_events,
+              username: username,
+              eventId: id,
             });
           }
         });
+      } else {
+        res.status(404).json({ error: `Event does not exist` });
       }
     } else {
       res.status(404).json({ error: `User does not exist` });
@@ -665,40 +673,41 @@ router.post('/remove-event-from-user', async (req, res) => {
       .catch((error) => {});
 
     if (user) {
-      let updatedEventsArray = user.attending_events;
+      const event = await axios
+        .get(`${baseUrl}/events/get-event-by-id/${id}`, headers)
+        .then((result) => {
+          console.log(result.data);
+          return result.data;
+        })
+        .catch((error) => {
+          console.log(error);
+        });
 
-      const index = updatedEventsArray.indexOf(id);
+      if (event) {
+        const joinEventsTableParams = {
+          TableName: JOIN_EVENTS_TABLE,
+          Key: {
+            username: username,
+            eventId: id,
+          },
+        };
 
-      if (index == -1) {
+        dynamodb.delete(joinEventsTableParams, (error) => {
+          if (error) {
+            console.log(err);
+            res.status(500).json({
+              error: 'Unable to delete, user may not be attending event',
+            });
+          } else {
+            res.status(200).json({
+              username: username,
+              eventId: id,
+            });
+          }
+        });
       } else {
-        updatedEventsArray.splice(index, 1);
+        res.status(404).json({ error: `Event does not exist` });
       }
-
-      const params = {
-        TableName: JOIN_EVENTS_TABLE,
-        Key: {
-          username: username,
-        },
-        UpdateExpression: 'set #attending_events = :a',
-        ExpressionAttributeNames: {
-          '#attending_events': 'attending_events',
-        },
-        ExpressionAttributeValues: {
-          ':a': updatedEventsArray,
-        },
-      };
-
-      dynamodb.update(params, (error) => {
-        if (error) {
-          console.log(err);
-          res.status(500).json({ error: 'Unable to update user' });
-        } else {
-          res.status(200).json({
-            username: user.username,
-            attending_events: user.attending_events,
-          });
-        }
-      });
     } else {
       res.status(404).json({ error: `User does not exist` });
     }
