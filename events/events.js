@@ -60,7 +60,10 @@ router.post('/create-event', (req, res) => {
     req.body;
 
   if (!(title && description && creator && startTime && endTime && location)) {
-    res.status(400).json({ error: 'Bad request' });
+    res.status(400).json({
+      error:
+        'Bad request, needs title, descritpion, creator, startTime (ISO), endTime (ISO), and location fields',
+    });
   } else {
     const id = uuid.v4();
     const attendees = [];
@@ -212,6 +215,28 @@ router.delete('/delete-event-by-id/:id', async (req, res) => {
       });
 
     if (event) {
+      const attendees = event.attendees;
+
+      const results = await Promise.all(
+        attendees.map(async (attendant) => {
+          return await axios
+            .post(
+              `${baseUrl}/events/remove-event-from-user`,
+              {
+                username: attendant,
+                id: id,
+              },
+              headers
+            )
+            .then((result) => {
+              return;
+            })
+            .catch((error) => {
+              return null;
+            });
+        })
+      );
+
       dynamodb.delete(params, (error) => {
         if (error) {
           console.log(err);
@@ -617,9 +642,6 @@ router.post('/add-event-to-user', async (req, res) => {
 
 router.post('/remove-event-from-user', async (req, res) => {
   const { username, id } = req.body;
-
-  console.log('USERNAME AND ID');
-  console.log(username, id);
 
   if (!(username && typeof id == 'string')) {
     res.status(400).json({ error: 'Bad request' });
