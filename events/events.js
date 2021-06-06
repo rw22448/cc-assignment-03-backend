@@ -153,7 +153,7 @@ router.get('/get-event-by-id/:id', async (req, res) => {
   }
 });
 
-router.get('/get-event-by-creator/:username', async (req, res) => {
+router.get('/get-events-by-creator/:username', async (req, res) => {
   const { username } = req.params;
 
   if (!username) {
