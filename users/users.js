@@ -9,6 +9,7 @@ const USERS_TABLE = process.env.USERS_TABLE;
 const ACTIVE_USERS_TABLE = process.env.ACTIVE_USERS_TABLE;
 const IS_OFFLINE = process.env.IS_OFFLINE;
 const USER_IMAGES_BUCKET = process.env.USER_IMAGES_BUCKET;
+const JOIN_EVENTS_TABLE = process.env.JOIN_EVENTS_TABLE;
 
 const dynamodbConfig = IS_OFFLINE
   ? { endpoint: 'http://localhost:8000/', region: 'localhost' }
@@ -39,8 +40,6 @@ router.get('/get-user-by-username/:username', (req, res) => {
       } else if (data && data.Item) {
         res.status(200).json({
           username: username,
-          created_events: data.Item.created_events,
-          attending_events: data.Item.attending_events,
         });
       } else {
         res.status(404).json({ error: 'User not found' });
@@ -66,7 +65,13 @@ router.post('/create-user', async (req, res) => {
       Item: {
         username: username,
         password: password,
-        created_events: [],
+      },
+    };
+
+    const joinEventsTableParams = {
+      TableName: JOIN_EVENTS_TABLE,
+      Item: {
+        username: username,
         attending_events: [],
       },
     };
@@ -89,9 +94,13 @@ router.post('/create-user', async (req, res) => {
         if (error) {
           res.status(500).json({ error: 'Unable to complete request' });
         } else {
-          res
-            .status(200)
-            .json({ username, created_events: [], attending_events: [] });
+          dynamodb.put(joinEventsTableParams, (error) => {
+            if (error) {
+              res.status(500).json({ error: 'Unable to complete request' });
+            } else {
+              res.status(200).json({ username });
+            }
+          });
         }
       });
     }
@@ -157,6 +166,13 @@ router.delete('/delete-user-by-username/:username', async (req, res) => {
       },
     };
 
+    const joinEventsTableParams = {
+      TableName: JOIN_EVENTS_TABLE,
+      Key: {
+        username: username,
+      },
+    };
+
     let baseUrl = IS_OFFLINE
       ? 'http://' + req.get('host')
       : 'https://' + req.get('host') + '/dev';
@@ -174,7 +190,14 @@ router.delete('/delete-user-by-username/:username', async (req, res) => {
           console.log(error);
           res.status(500).json({ error: 'Unable to delete user' });
         } else {
-          res.status(200).json({ username });
+          dynamodb.delete(joinEventsTableParams, (error) => {
+            if (error) {
+              console.log(error);
+              res.status(500).json({ error: 'Unable to complete request' });
+            } else {
+              res.status(200).json({ username });
+            }
+          });
         }
       });
     } else {
@@ -318,112 +341,6 @@ router.put('/images/create-image', async (req, res) => {
         });
       }
     });
-  }
-});
-
-router.put('/add-to-created-events', async (req, res) => {
-  const { username, id } = req.body;
-
-  if (!(username && typeof id == 'string')) {
-    res.status(400).json({ error: 'Bad request' });
-  } else {
-    let baseUrl = IS_OFFLINE
-      ? 'http://' + req.get('host')
-      : 'https://' + req.get('host') + '/dev';
-
-    const user = await axios
-      .get(`${baseUrl}/users/get-user-by-username/${username}`)
-      .then((result) => {
-        return result.data;
-      })
-      .catch((error) => {});
-
-    if (user) {
-      let updatedEventsArray = user.created_events;
-      updatedEventsArray.push(id);
-
-      const params = {
-        TableName: USERS_TABLE,
-        Key: {
-          username: username,
-        },
-        UpdateExpression: 'set #created_events = :a',
-        ExpressionAttributeNames: {
-          '#created_events': 'created_events',
-        },
-        ExpressionAttributeValues: {
-          ':a': updatedEventsArray,
-        },
-      };
-
-      dynamodb.update(params, (error) => {
-        if (error) {
-          console.log(err);
-          res.status(500).json({ error: 'Unable to update user' });
-        } else {
-          res.status(200).json({
-            username: user.username,
-            created_events: user.created_events,
-            attending_events: user.attending_events,
-          });
-        }
-      });
-    } else {
-      res.status(404).json({ error: `User does not exist` });
-    }
-  }
-});
-
-router.post('/add-to-attending-events', async () => {
-  const { username, id } = req.body;
-
-  if (!(username && typeof id == 'string')) {
-    res.status(400).json({ error: 'Bad request' });
-  } else {
-    let baseUrl = IS_OFFLINE
-      ? 'http://' + req.get('host')
-      : 'https://' + req.get('host') + '/dev';
-
-    const user = await axios
-      .get(`${baseUrl}/users/get-user-by-username/${username}`)
-      .then((result) => {
-        return result.data;
-      })
-      .catch((error) => {});
-
-    if (user) {
-      let updatedEventsArray = user.attending_events;
-      updatedEventsArray.push(id);
-
-      const params = {
-        TableName: USERS_TABLE,
-        Key: {
-          username: username,
-        },
-        UpdateExpression: 'set #attending_events = :a',
-        ExpressionAttributeNames: {
-          '#attending_events': 'attending_events',
-        },
-        ExpressionAttributeValues: {
-          ':a': updatedEventsArray,
-        },
-      };
-
-      dynamodb.update(params, (error) => {
-        if (error) {
-          console.log(err);
-          res.status(500).json({ error: 'Unable to update user' });
-        } else {
-          res.status(200).json({
-            username: user.username,
-            created_events: user.created_events,
-            attending_events: user.attending_events,
-          });
-        }
-      });
-    } else {
-      res.status(404).json({ error: `User does not exist` });
-    }
   }
 });
 
